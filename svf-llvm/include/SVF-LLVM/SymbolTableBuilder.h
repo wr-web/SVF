@@ -72,6 +72,8 @@ protected:
 
     void collectObj(const Value* val);
 
+    void collectValArgs(const Function* fun);
+
     void collectRet(const Function* val);
 
     void collectVararg(const Function* val);

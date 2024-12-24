@@ -111,6 +111,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
         for (const Function& fun : M.functions())
         {
             collectSym(&fun);
+            collectValArgs(&fun);
             collectRet(&fun);
             if (fun.getFunctionType()->isVarArg())
                 collectVararg(&fun);
@@ -345,6 +346,51 @@ void SymbolTableBuilder::collectObj(const Value* val)
             assert(symInfo->objMap.find(id) == symInfo->objMap.end());
             symInfo->objMap[id] = mem;
         }
+    }
+}
+
+void SymbolTableBuilder::collectValArgs(const Function* fun)
+{
+    for (const Argument& arg : fun->args())
+    {
+        const Value *val = &arg;
+
+        LLVMModuleSet* llvmModuleSet = LLVMModuleSet::getLLVMModuleSet();
+        SVFValue* svfVal = llvmModuleSet->getSVFValue(val); 
+        SymID id = NodeIDAllocator::get()->allocateObjectId();
+        symInfo->objSymMap.insert(std::make_pair(svfVal, id));
+        SVFUtil::outs() << "new obj: " << id << "\n";
+
+        // create a typeInfo from the argument
+        llvm::Type *llvmTy = arg.getType();
+        const SVF::Type* objTy = const_cast<SVF::Type*>(llvmTy);
+        
+        SVFUtil::outs() << "objTy: " << objTy << "\n";
+        (void) getOrAddSVFTypeInfo(objTy);
+        ObjTypeInfo* typeInfo = new ObjTypeInfo(
+            llvmModuleSet->getSVFType(objTy),
+            Options::MaxFieldLimit());
+        SVFUtil::outs() << "typeInfo: " << typeInfo << "\n";
+
+        u32_t elemNum = 1;
+        u32_t byteSize = 0;
+        const llvm::DataLayout &DL = llvmModuleSet->
+                                getMainLLVMModule()->getDataLayout();
+        byteSize = DL.getTypeAllocSize(llvmTy);
+
+        SVFUtil::outs() << "byteSize: " << byteSize << "\n";
+
+        typeInfo->setFlag(ObjTypeInfo::STACK_OBJ);
+        typeInfo->setNumOfElements(elemNum);
+        typeInfo->setByteSizeOfObj(byteSize);
+
+        // create a memory object
+        MemObj* mem =
+            new MemObj(id, typeInfo,
+                        llvmModuleSet->getSVFValue(val));
+        assert(symInfo->objMap.find(id) == symInfo->objMap.end());
+        symInfo->objMap[id] = mem;
+        SVFUtil::outs() << "create a mem obj success " << "\n";
     }
 }
 

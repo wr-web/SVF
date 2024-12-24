@@ -142,10 +142,12 @@ SVFIR* SVFIRBuilder::build()
                     // if this is the function does not have caller (e.g. main)
                     // or a dead function, shall we create a black hole address edge for it?
                     // it is (1) too conservative, and (2) make FormalParmVFGNode defined at blackhole address PAGEdge.
-                    // if(SVFUtil::ArgInNoCallerFunction(&*I)) {
+                    // if(argValNodeId.hasValue() && SVFUtil::isArgOfUncalledFunction(argValNodeId->getValue())) {
                     //    if(I->getType()->isPointerTy())
                     //        addBlackHoleAddrEdge(argValNodeId);
                     //}
+                    NodeID argValArgNodeId = pag->getObjectNode(llvmModuleSet()->getSVFValue(&*I));
+                    addAddrEdge(argValArgNodeId, argValNodeId);
                     pag->addFunArgs(svffun,pag->getGNode(argValNodeId));
                 }
             }
