@@ -61,8 +61,6 @@ static SVFValue* createSVFValue(SVFValue::GNodeK kind, const SVFType* type,
             return new SVFInstruction(type, {}, {}, {});
         case SVFValue::SVFCall:
             return new SVFCallInst(type, {}, {}, {});
-        case SVFValue::SVFVCall:
-            return new SVFVirtualCallInst(type, {}, {}, {});
         case SVFValue::SVFGlob:
             return new SVFGlobalValue(type);
         case SVFValue::SVFArg:
@@ -189,7 +187,6 @@ cJSON* SVFIRWriter::virtToJson(const SVFValue* value)
         CASE(SVFBB, SVFBasicBlock);
         CASE(SVFInst, SVFInstruction);
         CASE(SVFCall, SVFCallInst);
-        CASE(SVFVCall, SVFVirtualCallInst);
         CASE(SVFGlob, SVFGlobalValue);
         CASE(SVFArg, SVFArgument);
         CASE(SVFConst, SVFConstant);
@@ -221,11 +218,13 @@ cJSON* SVFIRWriter::virtToJson(const SVFVar* var)
         CASE(VarargNode, VarArgPN);
         CASE(GepValNode, GepValVar);
         CASE(GepObjNode, GepObjVar);
-        CASE(FIObjNode, FIObjVar);
+        CASE(BaseObjNode, BaseObjVar);
         CASE(DummyValNode, DummyValVar);
         CASE(DummyObjNode, DummyObjVar);
         CASE(FunObjNode, FunObjVar);
         CASE(FunValNode, FunValVar);
+        CASE(HeapObjNode, HeapObjVar);
+        CASE(StackObjNode, StackObjVar);
 #undef CASE
     }
 }
@@ -344,7 +343,7 @@ cJSON* SVFIRWriter::contentToJson(const GepObjVar* var)
     return root;
 }
 
-cJSON* SVFIRWriter::contentToJson(const FIObjVar* var)
+cJSON* SVFIRWriter::contentToJson(const BaseObjVar* var)
 {
     return contentToJson(static_cast<const ObjVar*>(var));
 }
@@ -577,15 +576,6 @@ cJSON* SVFIRWriter::contentToJson(const SVFCallInst* value)
     JSON_WRITE_FIELD(root, value, args);
     JSON_WRITE_FIELD(root, value, varArg);
     JSON_WRITE_FIELD(root, value, calledVal);
-    return root;
-}
-
-cJSON* SVFIRWriter::contentToJson(const SVFVirtualCallInst* value)
-{
-    cJSON* root = contentToJson(static_cast<const SVFCallInst*>(value));
-    JSON_WRITE_FIELD(root, value, vCallVtblPtr);
-    JSON_WRITE_FIELD(root, value, virtualFunIdx);
-    JSON_WRITE_FIELD(root, value, funNameOfVcall);
     return root;
 }
 
@@ -1633,7 +1623,7 @@ SVFVar* SVFIRReader::createPAGNode(NodeID id, GNodeK kind)
         CASE(VarargNode, VarArgPN);
         CASE(GepValNode, GepValVar);
         CASE(GepObjNode, GepObjVar);
-        CASE(FIObjNode, FIObjVar);
+        CASE(BaseObjNode, BaseObjVar);
         CASE(DummyValNode, DummyValVar);
         CASE(DummyObjNode, DummyObjVar);
 #undef CASE
@@ -1915,7 +1905,7 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFVar* var)
         CASE(VarargNode, VarArgPN);
         CASE(GepValNode, GepValVar);
         CASE(GepObjNode, GepObjVar);
-        CASE(FIObjNode, FIObjVar);
+        CASE(BaseObjNode, BaseObjVar);
         CASE(DummyValNode, DummyValVar);
         CASE(DummyObjNode, DummyObjVar);
 #undef CASE
@@ -1956,7 +1946,7 @@ void SVFIRReader::fill(const cJSON*& fieldJson, GepObjVar* var)
     JSON_READ_FIELD_FWD(fieldJson, var, base);
 }
 
-void SVFIRReader::fill(const cJSON*& fieldJson, FIObjVar* var)
+void SVFIRReader::fill(const cJSON*& fieldJson, BaseObjVar* var)
 {
     fill(fieldJson, static_cast<ObjVar*>(var));
 }
@@ -2310,7 +2300,6 @@ void SVFIRReader::virtFill(const cJSON*& fieldJson, SVFValue* value)
         CASE(SVFBB, SVFBasicBlock);
         CASE(SVFInst, SVFInstruction);
         CASE(SVFCall, SVFCallInst);
-        CASE(SVFVCall, SVFVirtualCallInst);
         CASE(SVFGlob, SVFGlobalValue);
         CASE(SVFArg, SVFArgument);
         CASE(SVFConst, SVFConstant);
@@ -2373,14 +2362,6 @@ void SVFIRReader::fill(const cJSON*& fieldJson, SVFCallInst* value)
     JSON_READ_FIELD_FWD(fieldJson, value, args);
     JSON_READ_FIELD_FWD(fieldJson, value, varArg);
     JSON_READ_FIELD_FWD(fieldJson, value, calledVal);
-}
-
-void SVFIRReader::fill(const cJSON*& fieldJson, SVFVirtualCallInst* value)
-{
-    fill(fieldJson, static_cast<SVFCallInst*>(value));
-    JSON_READ_FIELD_FWD(fieldJson, value, vCallVtblPtr);
-    JSON_READ_FIELD_FWD(fieldJson, value, virtualFunIdx);
-    JSON_READ_FIELD_FWD(fieldJson, value, funNameOfVcall);
 }
 
 void SVFIRReader::fill(const cJSON*& fieldJson, SVFConstant* value)

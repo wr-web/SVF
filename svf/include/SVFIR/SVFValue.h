@@ -40,7 +40,7 @@ namespace SVF
 /// LLVM Aliases and constants
 typedef SVF::GraphPrinter GraphPrinter;
 
-
+class CallGraphNode;
 class SVFInstruction;
 class SVFBasicBlock;
 class SVFArgument;
@@ -320,8 +320,14 @@ private:
     std::vector<const SVFBasicBlock*> allBBs;   /// all BasicBlocks of this function
     std::vector<const SVFArgument*> allArgs;    /// all formal arguments of this function
     SVFBasicBlock *exitBlock;             /// a 'single' basic block having no successors and containing return instruction in a function
+    const CallGraphNode *callGraphNode;          /// call graph node for this function
 
 protected:
+    inline void setCallGraphNode(CallGraphNode *cgn)
+    {
+        callGraphNode = cgn;
+    }
+
     ///@{ attributes to be set only through Module builders e.g., LLVMModule
     inline void addBasicBlock(const SVFBasicBlock* bb)
     {
@@ -353,6 +359,11 @@ public:
     SVFFunction(const SVFType* ty,const SVFFunctionType* ft, bool declare, bool intrinsic, bool addrTaken, bool varg, SVFLoopAndDomInfo* ld);
     SVFFunction(void) = delete;
     virtual ~SVFFunction();
+
+    inline const CallGraphNode* getCallGraphNode() const
+    {
+        return callGraphNode;
+    }
 
     static inline bool classof(const SVFValue *node)
     {
@@ -732,66 +743,6 @@ public:
     inline  const SVFFunction* getCaller() const
     {
         return getFunction();
-    }
-};
-
-class SVFVirtualCallInst : public SVFCallInst
-{
-    friend class SVFIRWriter;
-    friend class SVFIRReader;
-    friend class LLVMModuleSet;
-
-private:
-    const SVFValue* vCallVtblPtr;   /// virtual table pointer
-    s32_t virtualFunIdx;            /// virtual function index of the virtual table(s) at a virtual call
-    std::string funNameOfVcall;     /// the function name of this virtual call
-
-protected:
-    inline void setFunIdxInVtable(s32_t idx)
-    {
-        virtualFunIdx = idx;
-    }
-    inline void setFunNameOfVirtualCall(const std::string& name)
-    {
-        funNameOfVcall = name;
-    }
-    inline void setVtablePtr(const SVFValue* vptr)
-    {
-        vCallVtblPtr = vptr;
-    }
-
-public:
-    SVFVirtualCallInst(const SVFType* ty, const SVFBasicBlock* b, bool vararg,
-                       bool tm)
-        : SVFCallInst(ty, b, vararg, tm, SVFVCall), vCallVtblPtr(nullptr),
-          virtualFunIdx(-1), funNameOfVcall()
-    {
-    }
-    inline const SVFValue* getVtablePtr() const
-    {
-        assert(vCallVtblPtr && "virtual call does not have a vtblptr? set it first");
-        return vCallVtblPtr;
-    }
-    inline s32_t getFunIdxInVtable() const
-    {
-        assert(virtualFunIdx >=0 && "virtual function idx is less than 0? not set yet?");
-        return virtualFunIdx;
-    }
-    inline const std::string& getFunNameOfVirtualCall() const
-    {
-        return funNameOfVcall;
-    }
-    static inline bool classof(const SVFValue *node)
-    {
-        return node->getKind() == SVFVCall;
-    }
-    static inline bool classof(const SVFInstruction *node)
-    {
-        return node->getKind() == SVFVCall;
-    }
-    static inline bool classof(const SVFCallInst *node)
-    {
-        return node->getKind() == SVFVCall;
     }
 };
 

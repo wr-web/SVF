@@ -40,7 +40,7 @@ jobs:
           sudo apt-get update
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo5 libzstd-dev
+          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz lcov libncurses5-dev libtinfo6 libzstd-dev
 
       # build-svf
       - name: build-svf
@@ -132,7 +132,7 @@ jobs:
           lcov --remove coverage.info '/usr/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/z3.obj/*' --output-file coverage.info
           lcov --remove coverage.info '${{github.workspace}}/llvm-*.obj/*' --output-file coverage.info
-          lcov --remove coverage.info '${{github.workspace}}/svf/include/FastCluster/*' --output-file coverage.info
+          lcov --remove coverage.info '${{github.workspace}}/svf/include/FastCluster/*' --output-file coverage.info --ignore-errors unused
           lcov --remove coverage.info '${{github.workspace}}/svf/lib/FastCluster/*' --output-file coverage.info
 
       - name: upload-coverage

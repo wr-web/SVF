@@ -705,7 +705,6 @@ bool LLVMUtil::isConstantObjSym(const Value* val)
  */
 Set<std::string> cppUtil::extractClsNamesFromFunc(const Function *foo)
 {
-    assert(foo->hasName() && "foo does not have a name? possible indirect call");
     const std::string &name = foo->getName().str();
     if (isConstructor(foo) || isDestructor(foo))
     {
@@ -893,7 +892,6 @@ bool cppUtil::matchesLabel(const std::string &foo, const std::string &label)
  */
 bool cppUtil::isTemplateFunc(const Function *foo)
 {
-    assert(foo->hasName() && "foo does not have a name? possible indirect call");
     const std::string &name = foo->getName().str();
     bool matchedLabel = matchesLabel(name, znstLabel) || matchesLabel(name, znkstLabel) ||
                         matchesLabel(name, znkLabel);
@@ -909,7 +907,6 @@ bool cppUtil::isTemplateFunc(const Function *foo)
  */
 bool cppUtil::isDynCast(const Function *foo)
 {
-    assert(foo->hasName() && "foo does not have a name? possible indirect call");
     return foo->getName().str() == dyncast;
 }
 
